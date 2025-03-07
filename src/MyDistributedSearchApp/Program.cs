@@ -15,6 +15,7 @@ builder.Services.AddSingleton<ServiceRegistry>();
 builder.Services.AddSingleton<IDistributedLockService, DistributedLockService>();
 
 builder.Services.AddHostedService<LockTestService>();
+builder.Services.AddHostedService<HerdEffectTestService>();
 
 var app = builder.Build();
 
