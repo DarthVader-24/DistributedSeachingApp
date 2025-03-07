@@ -10,7 +10,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.Configure<ZooKeeperOptions>(builder.Configuration.GetSection("ZooKeeper"));
 
 builder.Services.AddSingleton<ZooKeeperClient>();
-builder.Services.AddSingleton<LeaderService>();
+builder.Services.AddSingleton<ILeaderService, LeaderService>();
 builder.Services.AddSingleton<ServiceRegistry>();
 builder.Services.AddSingleton<IDistributedLockService, DistributedLockService>();
 
