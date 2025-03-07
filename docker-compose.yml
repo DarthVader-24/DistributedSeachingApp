@@ -1,0 +1,109 @@
+version: '3.8'
+services:
+  zookeeper1:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper1
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ZOO_SERVER_ID=1
+      - ZOO_SERVERS=zookeeper1:2888:3888;zookeeper2:2888:3888;zookeeper3:2888:3888
+    ports:
+      - "2181:2181"
+    networks:
+      - zk-net
+
+  zookeeper2:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper2
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ZOO_SERVER_ID=2
+      - ZOO_SERVERS=zookeeper1:2888:3888;zookeeper2:2888:3888;zookeeper3:2888:3888
+    networks:
+      - zk-net
+
+  zookeeper3:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper3
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ZOO_SERVER_ID=3
+      - ZOO_SERVERS=zookeeper1:2888:3888;zookeeper2:2888:3888;zookeeper3:2888:3888
+    networks:
+      - zk-net
+
+  mydistributedsearchapp1:
+    build:
+      context: ./src/MyDistributedSearchApp
+    container_name: mydistributedsearchapp1
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ZooKeeper__ConnectionString=zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      - ZooKeeper__LeaderElectionPath=/leader_election
+      - ZooKeeper__ServiceRegistryPath=/services/workers
+      - ZooKeeper__SessionTimeoutMs=20000
+    networks:
+      - zk-net
+    ports:
+      - "5001:80"
+
+  mydistributedsearchapp2:
+    build:
+      context: ./src/MyDistributedSearchApp
+    container_name: mydistributedsearchapp2
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ZooKeeper__ConnectionString=zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      - ZooKeeper__LeaderElectionPath=/leader_election
+      - ZooKeeper__ServiceRegistryPath=/services/workers
+      - ZooKeeper__SessionTimeoutMs=20000
+    networks:
+      - zk-net
+      
+  worker1:
+    build:
+      context: ./src/WorkerNode
+      dockerfile: Dockerfile
+    container_name: worker1
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Worker_Id = 1234
+      - ZooKeeper__ConnectionString=zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      - ZooKeeper__ServiceRegistryPath=/services/workers
+      - ZooKeeper__SessionTimeoutMs=20000
+    networks:
+      - zk-net
+
+  worker2:
+    build:
+      context: ./src/WorkerNode
+      dockerfile: Dockerfile
+    container_name: worker2
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Worker_Id = 1235
+      - ZooKeeper__ConnectionString=zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      - ZooKeeper__ServiceRegistryPath=/services/workers
+      - ZooKeeper__SessionTimeoutMs=20000
+    networks:
+      - zk-net
+
+networks:
+  zk-net:
+    driver: bridge
